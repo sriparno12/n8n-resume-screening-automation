@@ -1,0 +1,852 @@
+{
+  "updatedAt": "2026-01-04T20:12:16.318Z",
+  "createdAt": "2026-01-03T16:17:01.929Z",
+  "id": "pHFUkyIOLQK9a8T0",
+  "name": "AI Agent workflow",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -2192,
+        1552
+      ],
+      "id": "b16482e8-0d48-4426-aa93-c3fee11dd3cd",
+      "name": "OpenAI Model",
+      "notesInFlow": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "g3iYXoC7Jyhqdxac",
+          "name": "n8n free OpenAI API credits"
+        }
+      },
+      "notes": "Double-click to open"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "resume_text",
+              "value": "={{ $json.resume_text }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "job_description",
+              "value": "={{ $json.job_description }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "external_evidence",
+              "value": "={{ $json.external_evidence || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "forensic_flag",
+              "value": "={{ $json.forensic_flag || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "id-5",
+              "name": "github_html_content",
+              "value": "={{ $json.github_html_content || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "resume_filename",
+              "value": "={{ $json.resume_filename }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b7e1e758-afeb-434f-b634-eab2871d6590",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3152,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.forensic_flag }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d83e7951-1ddd-420d-8105-767771bd6dc6",
+      "name": "Check Forensic Flag",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2928,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "candidate_name",
+              "value": "Unknown",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "integrity_status",
+              "value": "FAIL",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "raw_score",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "id-4",
+              "name": "complexity_tier",
+              "value": "N/A",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "debate_transcript",
+              "value": "={ \"skeptic_concern\": \"Forensic analysis detected fraud attempt\", \"advocate_defense\": \"None - automatic rejection\" }",
+              "type": "object"
+            },
+            {
+              "id": "id-6",
+              "name": "reasoning_summary",
+              "value": "REJECT - FRAUD ATTEMPT: Forensic analysis detected white font manipulation or metadata hacks. Candidate attempted to deceive the screening system.",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "interview_questions",
+              "value": "[]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7d9889d4-6a7f-4709-a50c-aefbf1d9db1b",
+      "name": "Fraud Rejection Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2064,
+        1664
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Resume Text:\n{{ $json.resume_text }}\n\nJob Description:\n{{ $json.job_description }}\n\nTechnical Auditor Analysis:\n{{ $json.auditor_analysis }}\n\nExternal Evidence (GitHub/Portfolio):\n{{ $json.external_evidence }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are the Chief Technical Investigator for an elite engineering team. Your job is to investigate a candidate's claims against provided evidence using a \"Blind Debate\" protocol.\n\n### CRITICAL INSTRUCTIONS\n\n**CONTACT INFORMATION EXTRACTION**\n- Extract the candidate's full name, email address, and mobile/phone number from the resume.\n- If any contact information is not found, use \"Not provided\" as the value.\n\n**THE EVIDENCE RULE (External > Internal)**\n- A resume is merely a \"claim.\" The External Evidence is \"proof.\"\n- If the resume says \"Expert React\" but External Evidence shows 0 React repos: PENALIZE HEAVILY.\n- If the resume is modest but External Evidence shows complex architecture: BOOST SCORE.\n\n**ANTI-BIAS PROTOCOL (Zero-Gap Policy)**\n- IGNORE DATES: You are strictly forbidden from analyzing employment gaps.\n- FOCUS ON TRAJECTORY: Evaluate the rate of learning. Did they move from simple scripts to complex systems?\n- A candidate with 2 years of high-complexity shipping experience > A candidate with 10 years of legacy maintenance.\n\n### THE REASONING PROCESS (Chain of Thought)\n\n**STEP 1: The Skeptic (Attack the Profile)**\n- Look for \"Buzzword Salad\" (listing tools without context).\n- Highlight where External Evidence contradicts the resume.\n- Question the relevance of their projects to the specific JD.\n\n**STEP 2: The Advocate (Defend the Profile)**\n- Identify \"Transferable Genius\" (e.g., \"They don't know Rust, but their C++ code is optimized, so they will learn fast\").\n- Highlight the Complexity of the projects found in the External Evidence.\n- Defend against the Skeptic by pointing to \"Trajectory\" and \"Grit\".\n\n**STEP 3: The Verdict (The Judge)**\n- Synthesize the arguments.\n- Assign a Raw Technical Score (0-100) based on proven capability, not years.\n- Assign a Complexity Tier (Low/Med/High/Elite) based on the external code analysis.\n\nYou must output the analysis in the structured JSON format defined by the output parser.\n\n"
+        }
+      },
+      "id": "5aafce82-2d6e-404a-8d84-b9a27d615ec7",
+      "name": "Chief Technical Investigator Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2128,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"candidate_name\": {\n      \"type\": \"string\"\n    },\n    \"candidate_email\": {\n      \"type\": \"string\"\n    },\n    \"candidate_mobile\": {\n      \"type\": \"string\"\n    },\n    \"integrity_status\": {\n      \"type\": \"string\"\n    },\n    \"raw_score\": {\n      \"type\": \"number\"\n    },\n    \"complexity_tier\": {\n      \"type\": \"string\"\n    },\n    \"debate_transcript\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"skeptic_concern\": {\n          \"type\": \"string\"\n        },\n        \"advocate_defense\": {\n          \"type\": \"string\"\n        }\n      }\n    },\n    \"reasoning_summary\": {\n      \"type\": \"string\"\n    },\n    \"interview_questions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    }\n  }\n}"
+      },
+      "id": "8c784fcf-f067-47e9-82a2-56f897889328",
+      "name": "JSON Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -2000,
+        1488
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.github_html_content }}",
+        "options": {
+          "systemMessage": "### ROLE\nYou are a **Senior Code Auditor**. Your goal is to analyze raw text scraped from a developer's GitHub/Portfolio and determine the **Quality and Complexity** of their work.\n\n### INSTRUCTIONS\n1. **Ignore Dates:** Do not look at when the code was written.\n2. **Look for Signals of Quality:**\n   - **Architecture:** Do they use MVC, Microservices, or Clean Architecture?\n   - **Testing:** Are there references to Unit Tests, CI/CD pipelines, or high test coverage?\n   - **Documentation:** Is the README detailed?\n   - **Tech Stack:** What languages are *actually* used in the pinned/top repos?\n\n### OUTPUT\nWrite a concise summary paragraph (max 100 words).\n**Format:** \"Code Analysis: [Summary of Stack]. Complexity Level: [Low/Med/High]. Evidence: [Specific mention of a complex library, pattern, or project found in the text].\"\n\nIf the github_html_content is empty or minimal, output: \"Code Analysis: No GitHub data provided. Complexity Level: Unknown. Evidence: Unable to assess without external code samples.\""
+        }
+      },
+      "id": "cdcd91f5-6d19-401b-b31b-3c33358e5883",
+      "name": "Technical Auditor Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2704,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "auditor_analysis",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "073f9d69-d213-479d-a8d1-637a3610e782",
+      "name": "Merge Auditor Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2352,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            },
+            {}
+          ]
+        }
+      },
+      "id": "d886c1a6-a2ac-4a88-a239-e45f29075527",
+      "name": "Schedule Resume Screening",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -4272,
+        1616
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1DA44_G1TvzyTiaSCq8lkcikfntbx55Aa",
+            "mode": "id"
+          },
+          "whatToSearch": "files",
+          "fileTypes": [
+            "*"
+          ]
+        },
+        "options": {}
+      },
+      "id": "15de68ff-f2e7-42c9-a793-0ae99848d102",
+      "name": "Get Resumes from Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -4048,
+        1520
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mmv2dyTYZy4uD4kr",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1p6TcCqTKzyDAo4q6JQ948QjyeExEjrx6"
+        },
+        "options": {}
+      },
+      "id": "9dc1a0f8-7ae9-44fb-8534-f77fb755a113",
+      "name": "Get Job Description from Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -4048,
+        1712
+      ],
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mmv2dyTYZy4uD4kr",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "39111cce-fcc2-4080-a4c0-d40d17a558aa",
+      "name": "Download Resume File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -3824,
+        1520
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mmv2dyTYZy4uD4kr",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "77536677-ed24-4bb1-8243-0cd20d98b9ab",
+      "name": "Download JD File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -3824,
+        1712
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "mmv2dyTYZy4uD4kr",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "3462a297-cd54-435b-8830-5231f577e21e",
+      "name": "Extract Resume Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -3600,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {}
+      },
+      "id": "9df3c2be-8656-48ba-81ca-7d571bce8a1b",
+      "name": "Extract JD Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -3600,
+        1712
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "resume_text",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "job_description",
+              "value": "={{ $('Extract JD Text').first().json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "external_evidence",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "forensic_flag",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "id-5",
+              "name": "github_html_content",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "resume_filename",
+              "value": "={{ $('Download Resume File').first().json.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "bb586f19-6ce0-4351-9958-048f68cd4d87",
+      "name": "Merge Resume and JD",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3376,
+        1520
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1NT9CcA6K5c6COtqEYnzC10lYiqkZK2wS775KuMVQHfk/edit?gid=0#gid=0"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Resume Screening Results"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Candidate Name": "={{ $json.candidate_name }}",
+            "Candidate Email": "={{ $json.candidate_email }}",
+            "Candidate Mobile": "={{ $json.candidate_mobile }}",
+            "Resume Filename": "={{ $json.resume_filename || 'N/A' }}",
+            "Relevance Score": "={{ $json.raw_score }}",
+            "Reasoning Summary": "={{ $json.reasoning_summary }}",
+            "Screening Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [
+            "Candidate Name"
+          ],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Candidate Email",
+              "displayName": "Candidate Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Candidate Mobile",
+              "displayName": "Candidate Mobile",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Resume Filename",
+              "displayName": "Resume Filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Relevance Score",
+              "displayName": "Relevance Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Reasoning Summary",
+              "displayName": "Reasoning Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "Screening Date",
+              "displayName": "Screening Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3987fec9-bccd-48f6-ab51-439ae666728d",
+      "name": "Save Results to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1776,
+        1520
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wnpoH1ea5kZtcpin",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chief Technical Investigator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Technical Auditor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Check Forensic Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Forensic Flag": {
+      "main": [
+        [
+          {
+            "node": "Technical Auditor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fraud Rejection Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Chief Technical Investigator Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chief Technical Investigator Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Results to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fraud Rejection Response": {
+      "main": [
+        [
+          {
+            "node": "Save Results to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical Auditor Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge Auditor Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Auditor Output": {
+      "main": [
+        [
+          {
+            "node": "Chief Technical Investigator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Resume Screening": {
+      "main": [
+        [
+          {
+            "node": "Get Resumes from Drive",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Job Description from Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Resumes from Drive": {
+      "main": [
+        [
+          {
+            "node": "Download Resume File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Job Description from Drive": {
+      "main": [
+        [
+          {
+            "node": "Download JD File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Resume File": {
+      "main": [
+        [
+          {
+            "node": "Extract Resume Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download JD File": {
+      "main": [
+        [
+          {
+            "node": "Extract JD Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Resume Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Resume and JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Resume and JD": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract JD Text": {
+      "main": [
+        [
+          {
+            "node": "Merge Resume and JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "ready-to-run-ai-workflow",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "1e1c0394-72c8-47b0-b8e8-8c251a2bd5ff",
+  "activeVersionId": null,
+  "versionCounter": 5,
+  "triggerCount": 0,
+  "tags": [],
+  "parentFolder": null,
+  "activeVersion": null,
+  "homeProject": {
+    "id": "GmlKXtPCVWg9WIwK",
+    "type": "personal",
+    "name": "sriparno chowdhury <sriparno.tapmiblr2025@learner.manipal.edu>",
+    "icon": null
+  },
+  "sharedWithProjects": [],
+  "usedCredentials": [
+    {
+      "id": "g3iYXoC7Jyhqdxac",
+      "name": "n8n free OpenAI API credits",
+      "type": "openAiApi",
+      "currentUserHasAccess": true,
+      "homeProject": {
+        "id": "GmlKXtPCVWg9WIwK",
+        "type": "personal",
+        "name": "sriparno chowdhury <sriparno.tapmiblr2025@learner.manipal.edu>",
+        "icon": null
+      },
+      "sharedWithProjects": []
+    },
+    {
+      "id": "mmv2dyTYZy4uD4kr",
+      "name": "Google Drive account",
+      "type": "googleDriveOAuth2Api",
+      "currentUserHasAccess": true,
+      "homeProject": {
+        "id": "GmlKXtPCVWg9WIwK",
+        "type": "personal",
+        "name": "sriparno chowdhury <sriparno.tapmiblr2025@learner.manipal.edu>",
+        "icon": null
+      },
+      "sharedWithProjects": []
+    },
+    {
+      "id": "wnpoH1ea5kZtcpin",
+      "name": "Google Sheets account",
+      "type": "googleSheetsOAuth2Api",
+      "currentUserHasAccess": true,
+      "homeProject": {
+        "id": "GmlKXtPCVWg9WIwK",
+        "type": "personal",
+        "name": "sriparno chowdhury <sriparno.tapmiblr2025@learner.manipal.edu>",
+        "icon": null
+      },
+      "sharedWithProjects": []
+    }
+  ],
+  "scopes": [
+    "workflow:create",
+    "workflow:delete",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:list",
+    "workflow:move",
+    "workflow:read",
+    "workflow:share",
+    "workflow:update"
+  ],
+  "checksum": "be6df1663a44068d84304f7c4d5dbc1eb3fe8a0492838982dffc462c4bb931f2"
+}
